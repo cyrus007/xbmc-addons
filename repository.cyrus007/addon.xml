@@ -6,9 +6,8 @@
 		<datadir zip="true">https://github.com/cyrus007/xbmc-addons/raw/master/repository.cyrus007/repo/</datadir>
 	</extension>
 	<extension point="xbmc.addon.metadata">
-		<summary>Install Addons from https://github.com/anilkuj/</summary>
-		<description>Download and install addons from anilkuj repository.</description>
+		<summary>Install Addons from https://github.com/cyrus007/</summary>
+		<description>Download and install addons from cyrus007 repository.</description>
 		<platform>all</platform>
 	</extension>
 </addon>
-
