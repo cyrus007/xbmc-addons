@@ -1,0 +1,3 @@
+Currently this repository has the following XBMC Addons:
+1) IndoLyrics - a lyrics addon script to show hindi lyrics from Giitayan.com
+                you need a unicode ttf font which is capable of showing hindi characters and the Genre should be tagged as hindi
