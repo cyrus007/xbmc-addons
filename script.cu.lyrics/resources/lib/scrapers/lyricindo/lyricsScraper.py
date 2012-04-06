@@ -28,7 +28,7 @@ class XmlUtils :
 class LyricsFetcher:
     """ required: Fetcher Class for lyricindo """
     def __init__( self ):
-        self.base_url = "http://192.168.1.150:4567/cu/"
+        self.base_url = "http://indolyrics.heroku.com/"
 
     def get_lyrics_start(self, *args):
         lyricThread = threading.Thread(target=self.get_lyrics_thread, args=args)
@@ -68,7 +68,7 @@ class LyricsFetcher:
     def _fetch_lyrics( self, song ):
         """ Fetch lyrics if available """
         try:
-            url = self.base_url + "search/%s" % (urllib.quote(song.title.lower()))
+            url = self.base_url + "search/gi?title=%s" % (urllib.quote(song.title.lower()))
             print "Search url: %s" % (url)
             lyricText = urllib.urlopen(url).read()
             status = urllib.getcode()
