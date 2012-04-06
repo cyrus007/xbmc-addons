@@ -1,2 +1,5 @@
+[B]Version 2.0.5[/B]
+- Bumped version to sync with current script.cu.lyrics script
+
 [B]Version 1.0.3[/B]
 - Initial version

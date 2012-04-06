@@ -11,25 +11,11 @@ from song import *
 from lyrics import *
 from utilities import *
 
-try:
-    current_dlg_id = xbmcgui.getCurrentWindowDialogId()
-except:
-    current_dlg_id = 0
-current_win_id = xbmcgui.getCurrentWindowId()
-
 __scriptname__ = sys.modules[ "__main__" ].__scriptname__
 __version__    = sys.modules[ "__main__" ].__version__
 __settings__   = sys.modules[ "__main__" ].__settings__
 __language__   = sys.modules[ "__main__" ].__language__
 __cwd__        = sys.modules[ "__main__" ].__cwd__
-
-SELECT_ITEM = ( 11, 256, 61453, )
-EXIT_SCRIPT = ( 6, 10, 247, 275, 61467, 216, 257, 61448, )
-CANCEL_DIALOG = EXIT_SCRIPT + ( 216, 257, 61448, )
-GET_EXCEPTION = ( 216, 260, 61448, )
-SELECT_BUTTON = ( 229, 259, 261, 61453, )
-MOVEMENT_UP = ( 166, 270, 61478, )
-MOVEMENT_DOWN = ( 167, 271, 61480, )
 
 class GUI( xbmcgui.WindowXMLDialog ):
     def __init__( self, *args, **kwargs ):
@@ -66,7 +52,6 @@ class GUI( xbmcgui.WindowXMLDialog ):
         self.getControl( 120 ).setVisible( controlId == 120 )
         page_control = ( controlId == 100 )
 
-        xbmcgui.unlock()
         xbmc.sleep( 5 )
         try:
             self.setFocus( self.getControl( controlId + page_control ) )
@@ -83,18 +68,16 @@ class GUI( xbmcgui.WindowXMLDialog ):
             if ( lyrics is None ):
                 lyrics, error = self.LyricsScraper.get_lyrics_thread( song )
                 
-            if ( lyrics is not None ):
-                if ( isinstance( lyrics, basestring ) ):
+                if ( lyrics is not None ):
                     try:
-                        self.show_lyrics( lyrics, True )
                         self.save_lyrics_to_file(lyrics)
                     except:
                         pass
-                elif ( isinstance( lyrics, list ) and lyrics ):
-                    self.show_choices( lyrics )
-
+            
+            return lyrics, error
         except:
             print traceback.format_exc(sys.exc_info()[2])
+            return None, __language__(30001)
 
     def get_lyrics_from_list( self, item ):
         lyrics = self.LyricsScraper.get_lyrics_from_list( self.menu_items[ item ] )
@@ -165,7 +148,6 @@ class GUI( xbmcgui.WindowXMLDialog ):
     
     def show_lyrics( self, lyrics):
         try:
-            xbmcgui.lock()
             self.reset_controls()
             self.getControl( 100 ).setText( "" )
             self.getControl( 200 ).setLabel( "" )
@@ -188,7 +170,7 @@ class GUI( xbmcgui.WindowXMLDialog ):
                 self.getControl( 200 ).setLabel( lyrics.source )
             
         finally:
-            xbmcgui.unlock()
+            pass
 
     def show_prefetch_message(self, song):
         self.reset_controls()
@@ -196,7 +178,6 @@ class GUI( xbmcgui.WindowXMLDialog ):
         self.show_control( 100 )
     
     def show_choices( self, choices ):
-        xbmcgui.lock()
         for song in choices:
             self.getControl( 120 ).addItem( song[ 0 ] )
         self.getControl( 120 ).selectItem( 0 )
@@ -222,7 +203,6 @@ class GUI( xbmcgui.WindowXMLDialog ):
 
     def exit_script( self, restart=False ):
         self.close()
-        if ( restart ): xbmc.executebuiltin( "XBMC.RunScript(%s)" % ( os.path.join( __cwd__, "default.py" ), ) )
 
     def onClick( self, controlId ):
         if ( controlId == 120 ):
@@ -230,14 +210,17 @@ class GUI( xbmcgui.WindowXMLDialog ):
 
     def onFocus( self, controlId ):
         self.controlId = controlId
-
+        
+    def onAction( self, action ):
+        if ( action.getId() in CANCEL_DIALOG):
+            self.close()
+            
     def getMyPlayer( self ):
         self.MyPlayer = MyPlayer( xbmc.PLAYER_CORE_PAPLAYER, function=self.myPlayerChanged )
         self.myPlayerChanged( 2 )
 
     def myPlayerChanged( self, event, force_update=False ):
         try:
-            print "GUI-DEBUG: myPlayerChanged event:%s, force_update:%s" % (event, force_update)
             LOG( LOG_DEBUG, "%s (rev: %s) GUI::myPlayerChanged [%s]", __scriptname__, [ "stopped","ended","started" ][ event ] )
             if ( event < 2 ):
                 self.exit_script()
@@ -278,12 +261,11 @@ class GUI( xbmcgui.WindowXMLDialog ):
                     if ( song and ( self.current_song != song or force_update ) ):
                         self.current_song = song
                         self.show_prefetch_message(song)
-                        self.get_lyrics( song )
-                #       lyrics, error = self.get_lyrics( song )
-                #       if ( lyrics is not None ):                        #SWAPAN
-                #           self.show_lyrics(lyrics)
-                #       else:
-                #           self.show_error(error)
+                        lyrics, error = self.get_lyrics( song )
+                        if ( lyrics is not None ):
+                            self.show_lyrics(lyrics)
+                        else:
+                            self.show_error(error)
                     
                     next_song = Song.next()
                     if ( next_song ):
@@ -292,12 +274,11 @@ class GUI( xbmcgui.WindowXMLDialog ):
                         print "Missing Artist or Song name in ID3 tag for next track"
                         
                 else:
-                   self.get_lyrics(self.current_song)
-                #  lyrics, error = self.get_lyrics(self.current_song)
-                #  if ( lyrics is not None ):                             #SWAPAN
-                #      self.show_lyrics(lyrics)
-                #  else:
-                #      self.show_error(error)                   
+                   lyrics, error = self.get_lyrics(self.current_song)
+                   if ( lyrics is not None ):
+                       self.show_lyrics(lyrics)
+                   else:
+                       self.show_error(error)                   
                    
                    next_song = Song.next()
                    if ( next_song ):
@@ -333,7 +314,6 @@ class MyPlayer( xbmc.Player ):
             print "%s::%s (%d) [%s]" % ( self.__class__.__name__, sys.exc_info()[ 2 ].tb_frame.f_code.co_name, sys.exc_info()[ 2 ].tb_lineno, sys.exc_info()[ 1 ])
             print traceback.format_exc(sys.exc_info()[2])
 
-def onAction( self, action ):
-    actionId = action.getId()
-    if ( action.getButtonCode() in CANCEL_DIALOG ):
-        self.exit_script()
+
+        
+        

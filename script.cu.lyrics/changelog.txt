@@ -1,5 +1,25 @@
-1.0.3
-- added: indoLyrics to show hindi lyrics
+2.0.5
+- added lyricindo service from IndoLyrics.heroku.com
+
+2.0.4
+- added lyricwiki service
+
+2.0.3
+- clean lyrics before saving
+- clean search string further for better matching, thx DDDamian for that
+
+2.0.2
+- remove xbmcgui.lock() and xbmcgui.unlock()
+
+2.0.1
+- handle ACTION_NAV_BACK to close the script(id 92)
+- use xbmc.log()
+
+2.0.0
+- fork for Eden
+- changed: "xbmc.python" version="1.0" to "2.0"
+- removed: lyricswiki, just not worth it
+- cosmetics
 
 1.0.2
 - fixed: decode Lyricsmode and Lyricstime pages using 'decode("ISO-8859-1")', thx Anssi
