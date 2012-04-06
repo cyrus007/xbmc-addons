@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+    <string id="30000">Khoj</string>
+    
+    <!--Categories-->
+    <string id="30001">Enter string for movie name</string>
+    <string id="30002">Use scraper to get movie info -</string>
+    <string id="30004">[B]Search...[/B]</string>
+
+    <!--Scraper names-->
+    <string id="30011">RANGU</string>
+    <string id="30012">SOMINALTV</string>
+    <string id="30013">BHARATMOVIES</string>
+    
+    <!--NavItems-->
+    <string id="30020"> Next</string>
+    <string id="30021"> Previous</string>
+    
+    <!--Search-->
+    <string id="30034">Search for bollywood movies.</string>
+    
+    <!--Settings-->
+    
+    <!--Context Menu-->
+    <!--<string id="13347">Queue item</string>from system-->
+</strings>

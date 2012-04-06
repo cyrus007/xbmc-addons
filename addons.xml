@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
+<addon id="plugin.video.khoj"
+       name="Numi Khoj"
+       version="0.2.0"
+       provider-name="Cyrus007">
+  <requires>
+    <import addon="xbmc.python" version="1.0"/>
+    <import addon="script.module.simplejson" version="2.0.10"/>
+    <import addon="script.module.pysqlite2" version="2.5.6"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource"
+            library="default.py">
+        <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en">Search bollywood movies</summary>
+    <description lang="en">Search bollywood movies easily.</description>
+    <platform>all</platform>
+  </extension>
+</addon>
+
 <addon id="script.cu.lyrics"
        name="CU Lyrics"
        version="2.0.5"
