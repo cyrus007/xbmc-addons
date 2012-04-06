@@ -1,3 +1,6 @@
+1.0.3
+- added: indoLyrics to show hindi lyrics
+
 1.0.2
 - fixed: decode Lyricsmode and Lyricstime pages using 'decode("ISO-8859-1")', thx Anssi
 
