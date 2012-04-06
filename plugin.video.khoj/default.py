@@ -8,7 +8,7 @@ import sys
 __plugin__ = "NUMI Khoj"
 __author__ = "cyrus007 <swapan@yahoo.com>"
 __url__ = ""
-__version__ = "0.1.0"
+__version__ = "0.2.1"
 
 print "[PLUGIN] '%s: version %s' initialized!" % (__plugin__, __version__)
 
