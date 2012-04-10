@@ -29,7 +29,7 @@ BMGETVID = "http://khoj.heroku.com/bm/getvids?url=%s"
 
 pluginName = sys.modules['__main__'].__plugin__
 addonPath = xbmcaddon.Addon(id='plugin.video.khoj').getAddonInfo('path')
-mediaPath = os.path.join(addonPath, "thumbnails")
+mediaPath = os.path.join(addonPath, "resources/thumbnails")
 
 media = { 'youtube':'youtube.png', '180upload':'180upload.png', '2gbhosting':'2gbhosting.png', 'daclips':'logo.png',
           'dailymotion':'dailymotion.png', 'divxstage':'logo.png', 'ecostream':'logo.png', 'filebox':'logo.png',
@@ -63,6 +63,9 @@ class Khoj:
 #           req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
             req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.36 Safari/535.7')
             content=urllib2.urlopen(req).read()
+            if "NOT IMPLEMENTED" in content:
+                xbmcgui.Dialog().ok('Not implemented yet', "Fetching from this source has not been implemented yet.")
+                return
             json_data = loads(content)
             for movie in json_data:
 #               if movie['plot'] == None:
@@ -95,10 +98,10 @@ class Khoj:
             req = urllib2.Request(fullurl)
 #           req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
             req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.36 Safari/535.7')
-            response = urllib2.urlopen(req)
-            content=response.read()
-            response.close()
-            print content
+            content=urllib2.urlopen(req).read()
+            if "NOT IMPLEMENTED" in content:
+                xbmcgui.Dialog().ok('Not implemented yet', "Fetching from this source has not been implemented yet.")
+                return
             json_data = loads(content)
             for source in json_data['servers']:
                 yield self.Server(seq=source['no'], urls=source['links'])
