@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="repository.github.cyrus007-xbmc-addons" name="Cyrus007 addons" version="1.0.0" provider-name="cyrus007">
 	<extension point="xbmc.addon.repository" name="cyrus007 add-on repository">
-		<info compressed="false">https://github.com/cyrus007/xbmc-addons/raw/master/addons.xml</info>
-		<checksum>https://github.com/cyrus007/xbmc-addons/raw/master/addons.xml.md5</checksum>
-		<datadir zip="true">https://github.com/cyrus007/xbmc-addons/raw/master/repository.cyrus007/repo/</datadir>
+		<info compressed="false">https://github.com/cyrus007/xbmc-addons/raw/work/addons.xml</info>
+		<checksum>https://github.com/cyrus007/xbmc-addons/raw/work/addons.xml.md5</checksum>
+		<datadir zip="true">https://github.com/cyrus007/xbmc-addons/raw/work/repository.cyrus007/repo/</datadir>
 	</extension>
 	<extension point="xbmc.addon.metadata">
 		<summary>Install Addons from https://github.com/cyrus007/</summary>
