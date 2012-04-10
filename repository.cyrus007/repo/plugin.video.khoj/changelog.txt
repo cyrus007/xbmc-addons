@@ -1,4 +1,8 @@
+[B]Version 0.2.3[/B]
+- Moved to version using t0mm0's urlresolver
+
 [B]Version 0.2.1[/B]
 - Version bump
+
 [B]Version 0.2.0[/B]
 - Initial release version
