@@ -1,16 +1,28 @@
-"""
-  Khoj - main routines
-"""
+'''
+    Khoj plugin for XBMC
+    Copyright (C) 2011-2012 Cyrus007 <swapan@yahoo.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+'''
+
 import os.path, sys, urllib, xbmc, xbmcplugin, xbmcgui, xbmcaddon
 import khoj
 
-__settings__ = xbmcaddon.Addon(id='plugin.video.khoj')
-getLS = __settings__.getLocalizedString
-dbPath = xbmc.translatePath(os.path.join(__settings__.getAddonInfo('Profile'), 'numisearch.db'))
-
-Khoj = khoj.Khoj()
-DB = khoj.KhojDB(dbPath)
-
+settings = xbmcaddon.Addon(id='plugin.video.khoj')
+getLS = settings.getLocalizedString
+dbPath = os.path.join(xbmc.translatePath("special://database"), 'numisearch.db')
 
 class updateArgs:
 
@@ -27,6 +39,8 @@ class UI:
 
     def __init__(self):
         self.main = Main(checkMode = False)
+        self.khoj = khoj.Khoj(self.main.settings['scraper'])
+        self.db   = khoj.KhojDB(dbPath)
         xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 
     def endofdirectory(self, sortMethod = 'title'):
@@ -86,7 +100,7 @@ class UI:
     def showSearch(self):
         self.addItem({'Title':getLS(30004), 'mode':'keyboard', 'Plot':getLS(30034)})  #search
 #       self.addItem({'Title':'Test', 'mode':'test'})                                 #test
-        for srch_string in DB.getHistory():
+        for srch_string in self.db.getHistory():
             self.addItem({'Title':srch_string, 'mode':'history', 'Plot':getLS(30034)})#history
         self.endofdirectory()
 
@@ -98,17 +112,17 @@ class UI:
         search_string = keyboard.getText()
         if len(search_string) == 0:
             return
-        DB.add(search_string.strip())
+        self.db.add(search_string.strip())
         self.searchResults(search_string.strip())
 
     def searchResults(self, srch_str):
-        for srchItem in Khoj.getTitles(srch_str, self.main.settings['scraper']):
+        for srchItem in self.khoj.getTitles(srch_str):
             srchItem['mode'] = 'links'
             self.addItem(srchItem, isFolder = True)
         self.endofdirectory()
 
     def showLinks(self):
-        for server in Khoj.getServers(self.main.args.url, self.main.settings['scraper']):
+        for server in self.khoj.getServers(self.main.args.url):
             if len(server.links) > 1:
                 combolink = server.getComboLink()
                 combolink['mode'] = 'playVideo'
@@ -120,7 +134,7 @@ class UI:
         self.endofdirectory()
 
     def playVideo(self, title):
-        errorCode, videos = Khoj.getVideoDetails(self.main.args.url, title)
+        errorCode, videos = self.khoj.getVideoDetails(self.main.args.url, title)
         print videos['url']
         if (len(videos['url']) == 0):
 #           popup = xbmcgui.Dialog()
@@ -130,7 +144,6 @@ class UI:
             playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
             playlist.clear()
             for link in videos['url']:
-                    print link
                     li=xbmcgui.ListItem(label = title, path = link,
                                 iconImage = self.main.args.icon,
                                 thumbnailImage = self.main.args.icon)
@@ -158,7 +171,7 @@ class UI:
 class Main:
 
     def __init__(self, checkMode = True):
-        self.user = None
+#       self.user = None
         self.parseArgs()
         self.getSettings()
         if checkMode:
@@ -176,22 +189,23 @@ class Main:
 
     def getSettings(self):
         self.settings = dict()
-        if (not __settings__.getSetting('scraper')):
-            __settings__.openSettings()
-        self.settings['scraper'] = __settings__.getSetting('scraper')
+        if (not settings.getSetting('scraper')):
+            settings.openSettings()
+        self.settings['scraper'] = settings.getSetting('scraper')
 
     def checkMode(self):
         mode = self.args.mode
         title = self.args.name
+        ui = UI()
         if mode is None:
-            UI().showSearch()
+            ui.showSearch()
         elif mode == 'playVideo':
-            UI().playVideo(title)
+            ui.playVideo(title)
         elif mode == 'search':
-            UI().showSearch()
+            ui.showSearch()
         elif mode == 'keyboard':
-            UI().keyboard()
+            ui.keyboard()
         elif mode == 'links':
-            UI().showLinks()
+            ui.showLinks()
         elif mode == 'history':
-            UI().searchResults(title)
+            ui.searchResults(title)

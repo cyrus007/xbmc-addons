@@ -1,30 +1,29 @@
-import urllib2
-import os.path, re, sys
-import xbmcaddon
+import re, urllib2
+from xml.dom.minidom import parseString
 
-pluginName = sys.modules['__main__'].__plugin__
-addonPath = xbmcaddon.Addon(id='plugin.video.khoj').getAddonInfo('path')
-mediaPath = os.path.join(addonPath, "thumbnails")
-
-
-def getSource(url):
-    if url == '':
-        return 'Empty source'
-    server = re.compile('http://.+?/').findall(url)
-    #print '[getSource] ' + server[0]
-#   if 'youtube' in server[0]:
-#       return 'YOUTUBE', os.path.join(mediaPath, "youtube.png")
-#   else:
-#       return 'UNKNOWN', os.path.join(mediaPath, "logo.png")
-
-def getScraper(url):
-    if url == '':
-        return
-    server = re.compile('http://.+?/').findall(url)
-    #print '[getScraper] ' + server[0]
-#   if 'youtube' in server[0]:
-#       import sources.youtube as scraper
-#   else:
-#       import sources.unknown as scraper
-    return scraper.Resolver()
-
+def resolve_playlist(url):
+    r = re.match('https?://(?:www.)(?:youtube.com|youtu.be)/(?:view_playlist\?)p[=/](?P<plid>[0-9A-Za-z_\-]+)', url)
+    if r:
+        found = r.group('plid')
+    else:
+        r = re.match('https?://(?:www.)(?:youtube.com|youtu.be)/watch\?feature=player_embedded(?P<list>.+)', url)
+        if r:
+            plid = r.group('list').split('list=')
+            if (len(plid) > 0):
+                found = plid[1]
+    if r == False:
+        return url
+    if (len(found) > 16):
+        found = found[2:18]
+    print "found="+found
+    req = urllib2.Request('http://gdata.youtube.com/feeds/api/playlists/'+found+'?v=2')
+    response = urllib2.urlopen(req);page=response.read();response.close()
+    dom = parseString(page)
+    entries = dom.getElementsByTagName('entry')
+    urls = []; notskip = False
+    for entry in entries:
+        link = entry.getElementsByTagName('media:player')[0].getAttribute('url')
+        if link:
+            urls.append(link)
+    print urls
+    return urls

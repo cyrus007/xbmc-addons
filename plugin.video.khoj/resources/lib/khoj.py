@@ -1,7 +1,13 @@
-#!/usr/bin/python
-import re, sys, datetime, urllib, urllib2
-import xbmcgui
-from util import getSource, getScraper
+'''
+    Khoj plugin for XBMC
+    This is khoj.py
+'''
+
+import re, sys, os.path, datetime, urllib, urllib2
+import xbmcgui, xbmcaddon
+import urlresolver
+import util
+
 try:
     from json import loads
 except:
@@ -22,27 +28,40 @@ BMSEARCH = "http://khoj.heroku.com/bm/search?str=%s"
 BMGETVID = "http://khoj.heroku.com/bm/getvids?url=%s"
 
 pluginName = sys.modules['__main__'].__plugin__
+addonPath = xbmcaddon.Addon(id='plugin.video.khoj').getAddonInfo('path')
+mediaPath = os.path.join(addonPath, "thumbnails")
 
+media = { 'youtube':'youtube.png', '180upload':'180upload.png', '2gbhosting':'2gbhosting.png', 'daclips':'logo.png',
+          'dailymotion':'dailymotion.png', 'divxstage':'logo.png', 'ecostream':'logo.png', 'filebox':'logo.png',
+          'filenuke':'logo.png', 'flashx':'logo.png', 'hostingbulk':'vidpe.png', 'hostingcup':'hostingcup.png',
+          'jumbofiles':'logo.png', 'megaupload':'megaupload.png', 'megavideo':'megavideo.png', 'movdivx':'logo.png',
+          'movpod':'logo.png', 'movshare':'movshare.png', 'nolimitvideo':'logo.png', 'novamov':'novamov.png',
+          'ovfile':'ovfile.png', 'putlocker':'putlocker.png', 'rapidvideo':'rapidvideo.png', 'seeon':'seeon.png',
+          'skyload':'logo.png', 'stagevu':'logo.png', 'stream2k':'stream2k.png', 'tubeplus':'tubeplus.png',
+          'ufliq':'logo.png', 'uploadc':'logo.png', 'veeHD':'logo.png', 'veoh':'veoh.png', 'videobb':'videobb.png',
+          'videoweed':'videoweed.png', 'videozer':'videozer.png', 'vidpe':'vidpe.png', 'vidstream':'logo.png',
+          'vidxden':'logo.png', 'xvidstage':'xvidstage.png', 'zalaa':'logo.png', 'zshare':'zshare.png', 'vimeo':'vimeo.png' }
 
 class Khoj:
-    def __init__(self):
+    def __init__(self, homer):
         print "[%s] Initializing... Khoj" % (pluginName)
-
-    def getTitles(self, srchstr, scraper):
-        """self.items=[{Title, url, Thumb, Plot},...]"""
-        if scraper == '0':
-            url = RANGUSEARCH % (urllib.quote_plus(srchstr))
-        elif scraper == '1':
-            url = STTSEARCH % (urllib.quote_plus(srchstr))
-        elif scraper == '2':
-            url = BMSEARCH % (urllib.quote_plus(srchstr))
+        if homer == '0':
+            self.srchurl, self.vidurl = RANGUSEARCH, RANGUGETVID
+        elif homer == '1':
+            self.srchurl, self.vidurl = STTSEARCH, STTGETVID
+        elif homer == '2':
+            self.srchurl, self.vidurl = BMSEARCH, BMGETVID
         else:
-            url = URLSEARCH % (urllib.quote_plus(srchstr))
-        print "[%s:getTitles] url = '%s'" % (pluginName, url)
+            self.srchurl, self.vidurl = URLSEARCH, URLGETVID
+
+    def getTitles(self, srchstr):
+        """self.items=[{Title, url, Thumb, Plot},...]"""
+        fullurl = self.srchurl % (urllib.quote_plus(srchstr))
+        print "[%s:getTitles] url = '%s'" % (pluginName, fullurl)
         try:
-            req = urllib2.Request(url)
-            req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
-#           req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.36 Safari/535.7')
+            req = urllib2.Request(fullurl)
+#           req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
+            req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.36 Safari/535.7')
             content=urllib2.urlopen(req).read()
             json_data = loads(content)
             for movie in json_data:
@@ -68,20 +87,14 @@ class Khoj:
             print e.headers
             print e.fp.read()
 
-    def getServers(self, svrurl, scraper):
+    def getServers(self, svrurl):
         """self.servers=[Server,...]"""
-        if scraper == '0':
-            url = RANGUGETVID % (svrurl)
-        elif scraper == '1':
-            url = STTGETVID % (svrurl)
-        elif scraper == '2':
-            url = BMGETVID % (svrurl)
-        else:
-            url = URLGETVID % (svrurl)
-        print "[%s:getServers] url = '%s'" % (pluginName, url)
+        fullurl = self.vidurl % (urllib.quote_plus(svrurl))
+        print "[%s:getServers] url = '%s'" % (pluginName, fullurl)
         try:
-            req = urllib2.Request(url)
-            req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
+            req = urllib2.Request(fullurl)
+#           req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
+            req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.36 Safari/535.7')
             response = urllib2.urlopen(req)
             content=response.read()
             response.close()
@@ -94,19 +107,14 @@ class Khoj:
             print e.msg
             print e.headers
             print e.fp.read()
-        except urllib2.ValueError, e:
-            print e.msg
-            print e.headers
-            print e.fp.read()
 
     def getVideoDetails(self, url, title):
         """self.videoDetails={Title,Plot,urls},errorcode"""
         print "[%s:getVideoDetails] url = '%s'" % (pluginName, url)
-        scraper = getScraper(url)
         videourls = []
-        if 'UNKNOWN' in scraper.name:
-            popup = xbmcgui.Dialog().ok('VIDEO Source not implemented', "This video source has not been implemented yet.", "Try other sources.")
-            return 3, {'Title':'Error', 'Plot':'', 'url':[]}
+#       if scraper == None:
+#           popup = xbmcgui.Dialog().ok('VIDEO Source not implemented', "This video source has not been implemented yet.", "Try other sources.")
+#           return 3, {'Title':'Error', 'Plot':'', 'url':[]}
         if ':;' in url:
             links = url.split(':;')
             total = len(links); done = 0
@@ -115,10 +123,14 @@ class Khoj:
             progString = 'Videos loaded :: [B]%s/%s[/B] into XBMC playlist.' % (done, total)
             progDialog.update(0, "Please wait for the process to retrieve video links.", progString)
             for link in links:
-                vidurl, error = scraper.videoURL(link); done += 1
-                percent = (done * 100)/total
-                if error == '':
-                    videourls.append(vidurl)
+                scraper = urlresolver.HostedMediaFile(url=link, title=title)
+                done += 1; percent = (done * 100)/total
+                if scraper:
+                    vidurl = scraper.resolve()
+                    if isinstance(vidurl, list):
+                        videourls.extend(vidurl)
+                    else:
+                        videourls.append(vidurl)
                     progString = 'Videos loaded :: [B]%s/%s[/B] into XBMC playlist.' % (done, total)
                     progDialog.update(percent, "Please wait for the process to retrieve video links.", progString)
                     if progDialog.iscanceled():
@@ -131,28 +143,48 @@ class Khoj:
             progDialog.close()
             return 0, {'Title':'Video', 'Plot':'', 'url':videourls}
         else:
-            vidurl, error = scraper.videoURL(url)
-            if error == '':
-                if isinstance(vidurl, list):
-                    videourls.extend(vidurl)
-                    return 0, {'Title':'Video', 'Plot':'', 'url':videourls}
-                else:
+            urls = util.resolve_playlist(url)
+            if isinstance(urls, list):
+                for transurl in urls:
+                    scraper = urlresolver.HostedMediaFile(url=transurl, title=title)
+                    if scraper:
+                        vidurl = scraper.resolve()
+                        videourls.append(vidurl)
+                        print vidurl
+                    else:
+                        popup = xbmcgui.Dialog()
+                        popup.ok('Videos from playlist not found', "Try other sources.")
+                        return 3, {'Title':'Error', 'Plot':'', 'url':[]}
+                return 0, {'Title':'Video', 'Plot':'', 'url':videourls}
+            else:
+                scraper = urlresolver.HostedMediaFile(url=url, title=title)
+                if scraper:
+                    vidurl = scraper.resolve()
                     videourls.append(vidurl)
                     return 0, {'Title':'Video', 'Plot':'', 'url':videourls}
-            else:
-                popup = xbmcgui.Dialog()
-                popup.ok('Video not found', error, "Try other sources.")
-                return 3, {'Title':'Error', 'Plot':'', 'url':[]}
+                else:
+                    popup = xbmcgui.Dialog()
+                    popup.ok('Single video not found', "Try other sources.")
+                    return 3, {'Title':'Error', 'Plot':'', 'url':[]}
 
     class Server:
 
         def __init__(self, seq, urls):
             self.sequence = seq
-            if len(urls) > 0:
-              self.name, self.thumb = getSource(urls[0])
             self.links = []
             for link in urls:
                 self.links.append(link)
+            if len(urls) > 0:
+              r = re.match('https?://(www.)?(.+?)/', urls[0])
+              domain = r.groups()[1]
+              if domain:
+                  self.name = domain.split('.')[0]
+              self.resolver = urlresolver.HostedMediaFile(url=urls[0])
+              if self.resolver:
+                  self.thumb = os.path.join(mediaPath, media[self.name])
+              else:
+                  self.name = self.name + '-UNKNOWN'
+                  self.thumb = os.path.join(mediaPath, "logo.png")
 
         def getLinks(self):
             for index, link in enumerate(self.links):
