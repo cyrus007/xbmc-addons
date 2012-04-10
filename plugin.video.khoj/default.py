@@ -13,7 +13,7 @@ __version__ = "0.2.3"
 print "[PLUGIN] '%s: version %s' initialized!" % (__plugin__, __version__)
 
 if __name__ == "__main__":
-    import lib.numi as numi
+    import numi
     numi.Main()
 
 sys.modules.clear()
