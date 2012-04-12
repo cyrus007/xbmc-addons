@@ -1,0 +1,5 @@
+[B]Version 1.0.1[/B]
+- made some fixes here and there
+
+[B]Version 1.0.0[/B]
+- Initial Release.
