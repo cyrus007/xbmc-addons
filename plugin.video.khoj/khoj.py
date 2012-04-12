@@ -40,7 +40,8 @@ media = { 'youtube':'youtube.png', '180upload':'180upload.png', '2gbhosting':'2g
           'skyload':'logo.png', 'stagevu':'logo.png', 'stream2k':'stream2k.png', 'tubeplus':'tubeplus.png',
           'ufliq':'logo.png', 'uploadc':'logo.png', 'veeHD':'logo.png', 'veoh':'veoh.png', 'videobb':'videobb.png',
           'videoweed':'videoweed.png', 'videozer':'videozer.png', 'vidpe':'vidpe.png', 'vidstream':'logo.png',
-          'vidxden':'logo.png', 'xvidstage':'xvidstage.png', 'zalaa':'logo.png', 'zshare':'zshare.png', 'vimeo':'vimeo.png' }
+          'vidxden':'logo.png', 'xvidstage':'xvidstage.png', 'youku':'logo.png', 'zalaa':'logo.png', 'google':'logo.png',
+          'zshare':'zshare.png', 'vimeo':'vimeo.png' }
 
 class Khoj:
     def __init__(self, homer):
@@ -152,22 +153,28 @@ class Khoj:
                     scraper = urlresolver.HostedMediaFile(url=transurl, title=title)
                     if scraper:
                         vidurl = scraper.resolve()
-                        videourls.append(vidurl)
-                        print vidurl
+                        if vidurl:
+                            videourls.append(vidurl)
+                            print vidurl
+                        else:
+                            xbmcgui.Dialog().ok('Unsucessful', "Cannot get all videos of playlist.", "Try other sources.")
+                            return 3, {'Title':'Error', 'Plot':'', 'url':[]}
                     else:
-                        popup = xbmcgui.Dialog()
-                        popup.ok('Videos from playlist not found', "Try other sources.")
+                        xbmcgui.Dialog().ok('Not Implemented', "Cannot handle this playlist source.", "Try other sources.")
                         return 3, {'Title':'Error', 'Plot':'', 'url':[]}
                 return 0, {'Title':'Video', 'Plot':'', 'url':videourls}
             else:
                 scraper = urlresolver.HostedMediaFile(url=url, title=title)
                 if scraper:
                     vidurl = scraper.resolve()
-                    videourls.append(vidurl)
-                    return 0, {'Title':'Video', 'Plot':'', 'url':videourls}
+                    if vidurl:
+                        videourls.append(vidurl)
+                        return 0, {'Title':'Video', 'Plot':'', 'url':videourls}
+                    else:
+                        xbmcgui.Dialog().ok('Unsucessful', "Cannot get the video.", "Try other sources.")
+                        return 3, {'Title':'Error', 'Plot':'', 'url':[]}
                 else:
-                    popup = xbmcgui.Dialog()
-                    popup.ok('Single video not found', "Try other sources.")
+                    xbmcgui.Dialog().ok('Not Implemented', "Cannot handle this video source.", "Try other sources.")
                     return 3, {'Title':'Error', 'Plot':'', 'url':[]}
 
     class Server:
@@ -178,15 +185,14 @@ class Khoj:
             for link in urls:
                 self.links.append(link)
             if len(urls) > 0:
-              r = re.match('https?://(www.)?(.+?)/', urls[0])
-              domain = r.groups()[1]
-              if domain:
-                  self.name = domain.split('.')[0]
               self.resolver = urlresolver.HostedMediaFile(url=urls[0])
               if self.resolver:
+                  self.name = self.resolver.get_name()
                   self.thumb = os.path.join(mediaPath, media[self.name])
               else:
-                  self.name = self.name + '-UNKNOWN'
+                  r = re.match('https?://(.+?)/', urls[0])
+                  domain = r.groups()[0].replace('www.', '')
+                  self.name = domain + '-UNKNOWN'
                   self.thumb = os.path.join(mediaPath, "logo.png")
 
         def getLinks(self):
