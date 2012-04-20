@@ -1,3 +1,6 @@
+[B]Version 0.3.0[/B]
+Removed dependency on khoj.heroku.com
+
 [B]Version 0.2.3[/B]
 Fixed most of the issues with urlparser version.
 

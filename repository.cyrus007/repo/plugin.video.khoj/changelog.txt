@@ -1,8 +1,11 @@
-[B]Version 0.2.3[/B]
-- Moved to version using t0mm0's urlresolver
+[B]Version 0.3.0[/B]
+Removed dependency on khoj.heroku.com
 
-[B]Version 0.2.1[/B]
-- Version bump
+[B]Version 0.2.3[/B]
+Fixed most of the issues with urlparser version.
 
 [B]Version 0.2.0[/B]
-- Initial release version
+Using Eldorado's urlparser to parse URLs.
+
+[B]Version 0.1.0[/B]
+First working version without major bugs.

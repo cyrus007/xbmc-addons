@@ -6,6 +6,8 @@
 import re, sys, os.path, datetime, urllib, urllib2
 import xbmcgui, xbmcaddon
 import urlresolver
+from t0mm0.common.net import Net
+from BeautifulSoup import BeautifulSoup
 import util
 
 try:
@@ -17,19 +19,9 @@ try:
 except:
     from pysqlite2 import dbapi2 as sqlite
 
-#MAIN URLS
-URLSEARCH = "http://khoj.heroku.com/search?str=%s"
-URLGETVID = "http://khoj.heroku.com/getvids?url=%s"
-RANGUSEARCH = "http://khoj.heroku.com/rangu/search?str=%s"
-RANGUGETVID = "http://khoj.heroku.com/rangu/getvids?url=%s"
-STTSEARCH = "http://khoj.heroku.com/stt/search?str=%s"
-STTGETVID = "http://khoj.heroku.com/stt/getvids?url=%s"
-BMSEARCH = "http://khoj.heroku.com/bm/search?str=%s"
-BMGETVID = "http://khoj.heroku.com/bm/getvids?url=%s"
 
 pluginName = sys.modules['__main__'].__plugin__
-addonPath = xbmcaddon.Addon(id='plugin.video.khoj').getAddonInfo('path')
-mediaPath = os.path.join(addonPath, "resources/thumbnails")
+mediaPath = os.path.join(xbmcaddon.Addon(id='plugin.video.khoj').getAddonInfo('path'), "resources/thumbnails")
 
 media = { 'youtube':'youtube.png', '180upload':'180upload.png', '2gbhosting':'2gbhosting.png', 'daclips':'logo.png',
           'dailymotion':'dailymotion.png', 'divxstage':'logo.png', 'ecostream':'logo.png', 'filebox':'logo.png',
@@ -44,73 +36,56 @@ media = { 'youtube':'youtube.png', '180upload':'180upload.png', '2gbhosting':'2g
           'zshare':'zshare.png', 'vimeo':'vimeo.png' }
 
 class Khoj:
-    def __init__(self, homer):
+    def __init__(self, path):
         print "[%s] Initializing... Khoj" % (pluginName)
-        if homer == '0':
-            self.srchurl, self.vidurl = RANGUSEARCH, RANGUGETVID
-        elif homer == '1':
-            self.srchurl, self.vidurl = STTSEARCH, STTGETVID
-        elif homer == '2':
-            self.srchurl, self.vidurl = BMSEARCH, BMGETVID
-        else:
-            self.srchurl, self.vidurl = URLSEARCH, URLGETVID
+        self.db = NumiDB(path)
 
     def getTitles(self, srchstr):
         """self.items=[{Title, url, Thumb, Plot},...]"""
-        fullurl = self.srchurl % (urllib.quote_plus(srchstr))
-        print "[%s:getTitles] url = '%s'" % (pluginName, fullurl)
-        try:
-            req = urllib2.Request(fullurl)
-#           req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
-            req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.36 Safari/535.7')
-            content=urllib2.urlopen(req).read()
-            if "NOT IMPLEMENTED" in content:
-                xbmcgui.Dialog().ok('Not implemented yet', "Fetching from this source has not been implemented yet.")
-                return
-            json_data = loads(content)
-            for movie in json_data:
-#               if movie['plot'] == None:
-#                   movie['Plot'] = ''
-#               if movie['plotoutline'] == None:
-#                   movie['PlotOutline'] = ''
-#               if movie['cast'] == None:
-#                   movie['Cast'] = ''
-#               if movie['duration'] == None:
-#                   movie['Duration'] = ''
-#               if movie['resolution'] == None:
-#                   movie['VideoResolution'] = ''
-                yield {'Title':movie['title'], 'url':movie['url'], 'Thumb':movie['img']}
-        except urllib2.HTTPError, e:
-            print e.code
-            print e.msg
-            print e.headers
-            print e.fp.read()
-        except urllib2.URLError, e:
-            print e.reason
-            print e.msg
-            print e.headers
-            print e.fp.read()
+        print "[%s:getTitles] search string = '%s'" % (pluginName, srchstr)
+        content = self.db.searchTitle(srchstr)
+        if "NOT IMPLEMENTED" in content:
+            xbmcgui.Dialog().ok('Not implemented yet', "Fetching from this source has not been implemented yet.")
+            return
+        for movie in content:
+            yield {'Title':str(movie['title']), 'url':str(movie['url']), 'Thumb':str(movie['banner']), 'key':str(movie['key'])}
 
-    def getServers(self, svrurl):
+    def getServers(self, key, url):
         """self.servers=[Server,...]"""
-        fullurl = self.vidurl % (urllib.quote_plus(svrurl))
-        print "[%s:getServers] url = '%s'" % (pluginName, fullurl)
-        try:
-            req = urllib2.Request(fullurl)
-#           req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
-            req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.36 Safari/535.7')
-            content=urllib2.urlopen(req).read()
-            if "NOT IMPLEMENTED" in content:
-                xbmcgui.Dialog().ok('Not implemented yet', "Fetching from this source has not been implemented yet.")
-                return
-            json_data = loads(content)
-            for source in json_data['servers']:
-                yield self.Server(seq=source['no'], urls=source['links'])
-        except urllib2.HTTPError, e:
-            print e.code
-            print e.msg
-            print e.headers
-            print e.fp.read()
+        print "[%s:getServers] url = '%s'" % (pluginName, url)
+        content = Net().http_GET(url).content
+        tree = BeautifulSoup(content)
+#probably we should use ElementTree
+#       title = tree.findtext('div.middle_movies/div.post/h2')
+#       node  = tree.find('div.middle_movies/div.post/div')
+        title = tree.find('div', {'class':'middle_movies'}).find('div', {'class':'post'}).find('h2').string
+        node = tree.find('div', {'class':'middle_movies'}).find('div', {'class':'post'}); node = node.extract(); node = node.findAll('div')
+        banner = node[2].p.img['src']
+        if not self.db.getBanner(key) and banner and banner != '':
+            self.db.setBanner(key, banner)
+        splice = str(node[2])
+        lines = splice.split('<br'); total = len(lines)
+        if total < 3:
+            return
+        splices = splice.split('Online'); lines = splices[1].split('Server')
+        total = len(lines); count = 1
+        if total == 1:  #this means it did not find any server line
+            r = re.findall('href="(https?://[^"]+)"', lines[0])
+            if r:
+                links = []
+                for link in r:
+                    links.append(link)
+                yield self.Server(seq=1, urls=links)
+        else:
+            while count < total:
+                r = re.findall('href="(https?://[^"]+)"', lines[count])
+                if r:
+                    links = []
+                    for link in r:
+                        links.append(link)
+                    yield self.Server(seq=count, urls=links)
+                count += 1
+
 
     def getVideoDetails(self, url, title):
         """self.videoDetails={Title,Plot,urls},errorcode"""
@@ -177,6 +152,34 @@ class Khoj:
                     xbmcgui.Dialog().ok('Not Implemented', "Cannot handle this video source.", "Try other sources.")
                     return 3, {'Title':'Error', 'Plot':'', 'url':[]}
 
+    def updateRangu(self, path):
+        progDialog = xbmcgui.DialogProgress()
+        progDialog.create('Initializing database...')
+        progDialog.update(0, "Please wait for the process to retrieve video links.", 'Updating database :: ...')
+
+        numidb = NumiDB(path)
+        numidb.initDB(force=True)
+        content = Net().http_GET("http://movies.rangu.com/hindi-movies-list-a-to-z").content
+        tree = BeautifulSoup(content)
+        links = str(tree.find('div', { 'class' : 'tabcontentstyle'}))
+        r = re.findall('<a href="(https?://movies.rangu.com/[^"]+)">(.+)</a>', links)
+        if r:
+            done = 0; total = len(r)
+            for link in r:
+                url = link[0]; title = link[1]
+                done += 1; percent = (done * 100)/total
+                progString = 'Updating database :: [B]%s/%s[/B] into database.' % (done, total)
+                progDialog.update(percent, "Please wait for the process to retrieve video links.", progString)
+                if progDialog.iscanceled():
+                    progDialog.close()
+                numidb.addTitle(title, url)
+            progDialog.close()
+#           xbmcgui.Dialog().ok('Sucessfull updated the database', "Movies database has been re-initilized successfully.")
+        else:
+            print links
+ 
+            
+
     class Server:
 
         def __init__(self, seq, urls):
@@ -231,8 +234,8 @@ class KhojDB:
             pass
 
         try:
-            self.dbconn.execute("""CREATE TABLE search_terms (
-                                     key varchar primary key,
+            self.dbconn.execute("""CREATE TABLE IF NOT EXISTS search_terms (
+                                     key integer primary key,
                                      value varchar,
                                      stamp timestamp )""")
         except:
@@ -257,6 +260,95 @@ class KhojDB:
             cur.execute("SELECT DISTINCT value FROM search_terms ORDER BY stamp DESC LIMIT 15")
             for tuple in cur:
                 srchlist.append(tuple[0])
+        except Exception, e:
+            print e
+            pass
+        return srchlist
+
+class NumiDB:
+
+    def __init__(self, dbconn):
+        self.limit = 100
+        try:
+            self.dbconn = sqlite.connect(dbconn)
+#           self.initDB()
+        except Exception, e:
+            print e
+            pass
+
+    def initDB(self, force=False):
+        try:
+            self.dbconn.execute("PRAGMA synchronous = OFF")
+            self.dbconn.execute("PRAGMA default_synchronous = OFF")
+            self.dbconn.execute("PRAGMA journal_mode = OFF")
+            self.dbconn.execute("PRAGMA temp_store = MEMORY")
+            self.dbconn.execute("PRAGMA encoding = \"UTF-8\"")
+        except Exception, e:
+            pass
+
+        try:
+            if force:
+                self.dbconn.execute("""CREATE TABLE numi_titles (
+                                     key integer primary key,
+                                     title varchar NOT NULL,
+                                     url varchar NOT NULL,
+                                     banner varchar )""")
+            else:
+                self.dbconn.execute("""CREATE TABLE IF NOT EXISTS numi_titles (
+                                     key integer primary key,
+                                     title varchar NOT NULL,
+                                     url varchar NOT NULL,
+                                     banner varchar )""")
+            self.dbconn.commit()
+        except:
+            pass
+
+    def addTitle(self, title, url):
+        try:
+            self.dbconn.execute("""INSERT INTO numi_titles ( title, url ) VALUES ( ?, ? )""",
+                                  (title, url))
+            self.dbconn.commit()
+        except sqlite.IntegrityError:
+            pass
+        except Exception, e:
+            print e
+            pass
+
+    def setBanner(self, key, banner):
+        try:
+            cur = self.dbconn.cursor()
+            cur.execute("""UPDATE numi_titles SET banner=? WHERE key=? """,
+                                  (banner, key))
+            self.dbconn.commit()
+            if cur.rowcount == 0:
+                print "[%s:addBanner] Banner update failed for title=%s and banner=%s" % (pluginName, title, banner)
+        except Exception, e:
+            print e
+            pass
+
+    def getBanner(self, key):
+        banner = None
+        try:
+            cur = self.dbconn.cursor()
+            cur.execute("""SELECT banner FROM numi_titles WHERE key=? LIMIT 1 """, (key,))
+            if cur.rowcount < 1:
+                return False
+            else:
+                for tuple in cur:
+                    banner = tuple[0]
+        except Exception, e:
+            print e
+            pass
+        return banner
+
+    def searchTitle(self, srchstr):
+        srchlist = []
+        try:
+            cur = self.dbconn.cursor()
+            cur.execute("""SELECT key,title,url,banner FROM numi_titles WHERE title LIKE ? ORDER BY title LIMIT ?""",
+                                  ('%'+srchstr+'%', self.limit))
+            for tuple in cur:
+                srchlist.append({'key':tuple[0], 'title':tuple[1], 'url':tuple[2], 'banner':tuple[3]})
         except Exception, e:
             print e
             pass

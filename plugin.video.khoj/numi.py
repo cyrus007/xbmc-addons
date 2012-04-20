@@ -22,7 +22,10 @@ import khoj
 
 settings = xbmcaddon.Addon(id='plugin.video.khoj')
 getLS = settings.getLocalizedString
-dbPath = os.path.join(xbmc.translatePath("special://database"), 'numisearch.db')
+khojDBpath = xbmc.translatePath(os.path.join(settings.getAddonInfo('Profile'), 'numisearch.db'))
+DBpaths = [ xbmc.translatePath(os.path.join(settings.getAddonInfo('Profile'), 'rangu-numi.db')),
+            xbmc.translatePath(os.path.join(settings.getAddonInfo('Profile'), 'sominal-numi.db')),
+            xbmc.translatePath(os.path.join(settings.getAddonInfo('Profile'), 'bharat-numi.db')) ]
 
 class updateArgs:
 
@@ -39,8 +42,8 @@ class UI:
 
     def __init__(self):
         self.main = Main(checkMode = False)
-        self.khoj = khoj.Khoj(self.main.settings['scraper'])
-        self.db   = khoj.KhojDB(dbPath)
+        self.khojdb = khoj.KhojDB(khojDBpath)
+        self.khoj   = khoj.Khoj(self.main.numiDBpath)
         xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 
     def endofdirectory(self, sortMethod = 'title'):
@@ -61,6 +64,7 @@ class UI:
 
     def addItem(self, info, isFolder=True):
         #Defaults in dict. Use 'None' instead of None so it is compatible for quote_plus in parseArgs
+        info.setdefault('key', 'None')
         info.setdefault('url', 'None')
         info.setdefault('Thumb', 'None')
         info.setdefault('Icon', info['Thumb'])
@@ -69,7 +73,8 @@ class UI:
             '?url='+urllib.quote_plus(info['url'])+\
             '&mode='+urllib.quote_plus(info['mode'])+\
             '&name='+urllib.quote_plus(info['Title'].encode('ascii','ignore'))+\
-            '&icon='+urllib.quote_plus(info['Thumb'])            
+            '&icon='+urllib.quote_plus(info['Thumb'])+\
+            '&key='+urllib.quote_plus(info['key'])
         #create list item
         if info['Title'].startswith(" "):
           title = info['Title'][1:]
@@ -100,7 +105,7 @@ class UI:
     def showSearch(self):
         self.addItem({'Title':getLS(30004), 'mode':'keyboard', 'Plot':getLS(30034)})  #search
 #       self.addItem({'Title':'Test', 'mode':'test'})                                 #test
-        for srch_string in self.db.getHistory():
+        for srch_string in self.khojdb.getHistory():
             self.addItem({'Title':srch_string, 'mode':'history', 'Plot':getLS(30034)})#history
         self.endofdirectory()
 
@@ -112,7 +117,7 @@ class UI:
         search_string = keyboard.getText()
         if len(search_string) == 0:
             return
-        self.db.add(search_string.strip())
+        self.khojdb.add(search_string.strip())
         self.searchResults(search_string.strip())
 
     def searchResults(self, srch_str):
@@ -122,7 +127,7 @@ class UI:
         self.endofdirectory()
 
     def showLinks(self):
-        for server in self.khoj.getServers(self.main.args.url):
+        for server in self.khoj.getServers(self.main.args.key, self.main.args.url):
             if len(server.links) > 1:
                 combolink = server.getComboLink()
                 combolink['mode'] = 'playVideo'
@@ -168,6 +173,15 @@ class UI:
                 popup.ok('Invalid video playlist', "Video was removed due to copyright issue.", "Try other sources.")
 #           xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, li)
 
+    def updateDB(self):  #taking all the precautions b/c it is called from settings window
+        scraper = int(settings.getSetting('scraper'))
+        if scraper == 0:
+            self.khoj.updateRangu(DBpaths[scraper])
+        elif scraper == 1:
+            self.khoj.updateSominal(DBpaths[scraper])
+        elif scraper == 2:
+            self.khoj.updateBharat(DBpaths[scraper])
+
 class Main:
 
     def __init__(self, checkMode = True):
@@ -189,9 +203,13 @@ class Main:
 
     def getSettings(self):
         self.settings = dict()
-        if (not settings.getSetting('scraper')):
+        if settings.getSetting('not_first_run') == '' or settings.getSetting('not_first_run') == 'false':
             settings.openSettings()
-        self.settings['scraper'] = settings.getSetting('scraper')
+            settings.setSetting('not_first_run','true')
+        if settings.getSetting('scraper'):
+            self.numiDBpath = DBpaths[int(settings.getSetting('scraper'))]
+        else:
+            self.numiDBpath = DBpaths[0]   #use Rangu by default
 
     def checkMode(self):
         mode = self.args.mode
@@ -207,5 +225,7 @@ class Main:
             ui.keyboard()
         elif mode == 'links':
             ui.showLinks()
+        elif mode == 'update':
+            ui.updateDB()
         elif mode == 'history':
             ui.searchResults(title)
