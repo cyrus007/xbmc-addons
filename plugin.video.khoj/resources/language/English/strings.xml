@@ -5,6 +5,7 @@
     <!--Categories-->
     <string id="30001">Enter string for movie name</string>
     <string id="30002">Use scraper to get movie info -</string>
+    <string id="30003">Update the Database file from movie site.</string>
     <string id="30004">[B]Search...[/B]</string>
 
     <!--Scraper names-->

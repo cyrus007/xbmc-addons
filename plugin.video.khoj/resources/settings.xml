@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
 	<setting id="scraper" label="30002" type="enum" default="0" lvalues="30011|30012|30013"/>
+	<setting id="updateDB" label="30003" type="action" action="RunPlugin(plugin://plugin.video.khoj/?mode=update&name=None)"/>
 </settings>
